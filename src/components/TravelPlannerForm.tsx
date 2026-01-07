@@ -27,7 +27,6 @@ import {
   clearDraft,
   saveItinerary,
   getRecentItineraries,
-  exportItinerary,
   DraftFormData,
 } from "@/lib/storage"
 import {
@@ -201,28 +200,31 @@ export function TravelPlannerForm() {
   const handleExportItinerary = () => {
     if (!results) return
 
-    const tempItinerary = saveItinerary(
-      `Export-${new Date().toISOString()}`,
-      {
+    // Create export object directly without saving to storage
+    const exportData = {
+      id: `export-${Date.now()}`,
+      name: `Export-${format(new Date(), "yyyy-MM-dd")}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      formData: {
         originCity: results.searchCriteria.origin,
         destinationCity: results.searchCriteria.destination,
         departureDate: results.searchCriteria.departureDate,
         returnDate: results.searchCriteria.returnDate,
         preferences: formValues.preferences || "",
       },
-      results
-    )
-
-    const json = exportItinerary(tempItinerary.id)
-    if (json) {
-      const blob = new Blob([json], { type: "application/json" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `itinerary-${format(new Date(), "yyyy-MM-dd")}.json`
-      a.click()
-      URL.revokeObjectURL(url)
+      results,
+      isDraft: false,
     }
+
+    const json = JSON.stringify(exportData, null, 2)
+    const blob = new Blob([json], { type: "application/json" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `itinerary-${format(new Date(), "yyyy-MM-dd")}.json`
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   const loadItinerary = (itinerary: SavedItinerary) => {
